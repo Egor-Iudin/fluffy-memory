@@ -319,7 +319,7 @@ void Config::ReadSamples(string const &path, unsigned type, string const &defTra
         {
             Setting const &stgNumEvents = LookupSetting(item.getPath() + ".number-events");
             int const numEventsSize = stgNumEvents.getLength();
-            log << info(1) << "events " << numEventsSize << eom;
+            log << info(1) << "Events numEventsSize = " << numEventsSize << eom;
             if (numEventsSize == 0 /*or numEventsSize > 2*/)
             {
                 log << critical << "Setting \"" << stgNumEvents.getPath() << "\" must contain "
