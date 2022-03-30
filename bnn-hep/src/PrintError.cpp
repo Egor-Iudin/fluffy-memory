@@ -226,8 +226,6 @@ std::tuple<float *, float *, float *, float *, float *, float *, int> PrintError
 		}
 		if (STRING.find(firststep) != std::string::npos)
 		{
-			std::cout << "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB" << std::endl;
-
 			parsedstr = parcestr(STRING);
 
 			// string nnn (parsedstr[2]);
@@ -236,18 +234,14 @@ std::tuple<float *, float *, float *, float *, float *, float *, int> PrintError
 			// string nameRoot = name.c_str()+".root";
 			rGraphName = (parsedstr[2] + "");
 			rFileName = (parsedstr[2] + ".root");
-			std::cout << "  sssss " << std::endl;
-			std::cout << "  sssss " << rGraphName.c_str() << "  " << rFileName.c_str() << std::endl;
-			// getchar();
+			std::cout << rGraphName.c_str() << " " << rFileName.c_str() << std::endl;
+
 			while (getline(infile, STRING)) // To get you all the lines.
 			{
 				std::cout << STRING.c_str() << std::endl;
-				// getchar();
 				if (STRING.find(stopstep) != std::string::npos)
 				{
-					// getchar();
-
-					std::cout << "Stop!!!!!!!!!!!" << std::endl;
+					std::cout << "Stop!" << std::endl;
 					break;
 				}
 
@@ -257,35 +251,31 @@ std::tuple<float *, float *, float *, float *, float *, float *, int> PrintError
 					internalNumber = 0;
 					while (getline(infile, STRING)) // To get you all the lines.
 					{
-						// std::cout<<"CCCCCCCCCCCCCCCCCCCCCCCCCCc"<<std::endl;
 						if (STRING.find("ErrE") != std::string::npos)
 						{
 
 							parsedstr = parcestr(STRING);
-							// cout<<STRING<<endl; // Prints our STRING.
+							// cout << STRING << endl; // Prints our STRING.
 							float val;
 							// fff.erase (fff.end()-4, fff.end());
-							// cout<<fff<<endl; // Prints our STRING.
-							// std::cout<<"parsestr = "<<parsedstr[2].c_str()<<std::endl;
+							// cout << fff << endl; // Prints our STRING.
+							// std::cout << "parsestr = " << parsedstr[2].c_str() << std::endl;
 							val = atof(parsedstr[2].c_str());
-							// std::cout<<"atof Error = "<<val<<std::endl;
+							// std::cout << "atof Error = " << val << std::endl;
 							ErrorListExam[internalNumber] = val;
 							// ErrorListExam[internalNumber]=1;
 							NumbersListExam[internalNumber] = internalNumber;
 							ErrorListExamAll[AllNumber] = val;
 							// ErrorListExam[internalNumber]=1;
 							NumbersListExamAll[AllNumber] = AllNumber;
-
-							// getchar();
 						}
 						if (STRING.find("Error") != std::string::npos)
 						{
-
 							parsedstr = parcestr(STRING);
 
 							float val;
 							val = atof(parsedstr[2].c_str());
-							// std::cout<<"atof Exam = "<<val<<std::endl;
+							// std::cout << "atof Exam = " << val << std::endl;
 							ErrorList[internalNumber] = val;
 							// ErrorList[internalNumber]=1;
 							NumbersList[internalNumber] = internalNumber;
@@ -295,56 +285,50 @@ std::tuple<float *, float *, float *, float *, float *, float *, int> PrintError
 							// ErrorList[internalNumber]=1;
 							NumbersListAll[AllNumber] = AllNumber;
 							// internalNumber++;
-
-							// getchar();
 						}
 
 						if (STRING.find("Sign") != std::string::npos)
 						{
 
 							parsedstr = parcestr(STRING);
-							// cout<<STRING<<endl; // Prints our STRING.
+							// cout << STRING << endl; // Prints our STRING.
 							float val;
 							val = atof(parsedstr[2].c_str());
 							SingList[internalNumber] = val;
 							SingNumberList[internalNumber] = internalNumber;
 							SingListAll[AllNumber] = val;
 							SingNumberListAll[AllNumber] = AllNumber;
-
-							// getchar();
 						}
 
 						if (STRING.find("Roc_auc") != std::string::npos)
 						{
 
 							parsedstr = parcestr(STRING);
-							// cout<<STRING<<endl; // Prints our STRING.
+							// cout << STRING << endl; // Prints our STRING.
 							float val;
 							// fff.erase (fff.end()-4, fff.end());
-							// cout<<fff<<endl; // Prints our STRING.
-							// std::cout<<"parsestr = "<<parsedstr[2].c_str()<<std::endl;
+							// cout << fff << endl; // Prints our STRING.
+							// std::cout << "parsestr = " << parsedstr[2].c_str() << std::endl;
 							val = atof(parsedstr[2].c_str());
-							// std::cout<<"atof Error = "<<val<<std::endl;
+							// std::cout << "atof Error = " << val << std::endl;
 							ROCList[internalNumber] = val;
 							// ErrorListExam[internalNumber]=1;
 							ROCNumbersList[internalNumber] = internalNumber;
 							ROCListAll[AllNumber] = val;
 							// ErrorListExam[internalNumber]=1;
 							ROCNumbersListAll[AllNumber] = AllNumber;
-
-							// getchar();
 						}
 						if (STRING.find("Roc_Exam") != std::string::npos)
 						{
 
 							parsedstr = parcestr(STRING);
-							// cout<<STRING<<endl; // Prints our STRING.
+							// cout << STRING << endl; // Prints our STRING.
 							float val;
 							// fff.erase (fff.end()-4, fff.end());
-							// cout<<fff<<endl; // Prints our STRING.
-							// std::cout<<"parsestr = "<<parsedstr[2].c_str()<<std::endl;
+							// cout << fff << endl; // Prints our STRING.
+							// std::cout << "parsestr = " << parsedstr[2].c_str() << std::endl;
 							val = atof(parsedstr[2].c_str());
-							// std::cout<<"atof Error = "<<val<<std::endl;
+							// std::cout << "atof Error = " << val << std::endl;
 							ROCExamList[internalNumber] = val;
 							// ErrorListExam[internalNumber]=1;
 							ROCExamNumbersList[internalNumber] = internalNumber;
@@ -353,8 +337,6 @@ std::tuple<float *, float *, float *, float *, float *, float *, int> PrintError
 							ROCExamNumbersListAll[AllNumber] = AllNumber;
 							internalNumber++;
 							AllNumber++;
-
-							// getchar();
 						}
 
 						if (STRING.find("StopHybryb") != std::string::npos)
@@ -390,12 +372,11 @@ std::tuple<float *, float *, float *, float *, float *, float *, int> PrintError
 
 							iterNumber++;
 
-							// std::cout<<" bbbb  "<<rFileName<<"  "<<rGraphName<<std::endl;
-							// std::cout<< "mmm "<<stopstep.c_str()<<std::endl;
-							// getchar();
+							// std::cout << rFileName << ", " << rGraphName << std::endl;
+							// std::cout << stopstep.c_str() << std::endl;
 							// delete fname;
 							// delete gname;
-							// std::cout<<"Break11111111111"<<std::endl;
+							// std::cout << "Break!" << std::endl;
 							break;
 						}
 					}
@@ -403,7 +384,6 @@ std::tuple<float *, float *, float *, float *, float *, float *, int> PrintError
 			}
 		}
 	}
-	// getchar();
 	infile.close();
 	// system ("pause");
 	// delete  ErrorList;
@@ -412,11 +392,11 @@ std::tuple<float *, float *, float *, float *, float *, float *, int> PrintError
 	// delete SingNumberList;
 	// delete ErrorListExam;
 	// delete NumbersListExam ;
-	// std::cout<<"End First step"<<std::endl;
+	// std::cout << "End First step" << std::endl;
 	// delete parsedstr;
 	// delete STRING;
 	// delete infile;
-	/// delete firststep ;
+	// delete firststep ;
 	// delete secondstep ;
 	// delete thirdstep ;
 	// delete stopstep ;
@@ -424,7 +404,6 @@ std::tuple<float *, float *, float *, float *, float *, float *, int> PrintError
 	// delete fileName;
 	// return SingListLong[iterNumber-1];
 	return std::make_tuple(SingListLong, ErrorListLong, ErrorListExamLong, ROCListLong, ROCExamListLong, NumbersListLong, iterNumber - 1);
-	// getchar();
 }
 
 void PrintError::PrintEnsemble(int ensemblesize, int n, float *x, float **y, const char *fileName, const char *graphName, const char *titleName, std::vector<std::string> files)
@@ -432,24 +411,20 @@ void PrintError::PrintEnsemble(int ensemblesize, int n, float *x, float **y, con
 
 	std::ostringstream pngname;
 
-	const char *fname = fileName;  //   fileName;
+	const char *fname = fileName;  // fileName;
 	const char *gname = graphName; // graphName;
 	const char *tName = titleName;
 
-	// printf("1  xxxxx1111  %s \n",fname);
-	// getchar();
+	// printf("%s \n", fname);
 	TFile f(fname, "UPDATE");
 	TCanvas *c2 = new TCanvas("ensemble", "c2", 600, 400);
 
-	// printf("1  xxxxx2222  %s \n",fname);
-	// getchar();
+	// printf("%s \n", fname);
 	TMultiGraph *mg = new TMultiGraph();
-
-	// printf("2 \n");
 
 	mg->SetTitle(tName);
 	mg->SetName(gname);
-	// printf("3 \n");
+
 	/// TLegend leg(.1,.7,.3,.9,"Test Multi");
 	// leg.SetFillColor(0);
 	for (int ensemble = 0; ensemble < ensemblesize; ensemble++)
@@ -459,7 +434,6 @@ void PrintError::PrintEnsemble(int ensemblesize, int n, float *x, float **y, con
 		gr->SetLineColor(2 + ensemble);
 		gr->SetTitle(files[ensemble].c_str());
 		// gr->SetDrawOption("AP");
-		// printf("4 \n");
 
 		gr->SetLineWidth(2);
 		gr->SetMarkerColor(4 + ensemble);
@@ -468,13 +442,8 @@ void PrintError::PrintEnsemble(int ensemblesize, int n, float *x, float **y, con
 		(gr->GetXaxis())->SetTitle("Iterations");
 		// leg.AddEntry(gr,"Exp. Points");
 		mg->Add(gr);
-
-		// printf("5 \n");
 	}
 
-	// printf("6 \n");
-
-	//  getchar();
 	mg->Draw("AC*");
 	mg->GetXaxis()->SetTitle("Iterations");
 	mg->GetYaxis()->SetTitle(tName);
@@ -492,34 +461,27 @@ void PrintError::PrintEnsemble(int ensemblesize, int n, float *x, float **y, con
 	// leg.AddEntry(&gr1,"Exp. Points");
 	// leg.AddEntry(&gr2,"Th. Law");
 	// leg.Draw("Same");
-	// printf("7 \n");
 }
 
 void PrintError::PrintGraph1(int n, float *x, float *y, const char *fileName, const char *graphName, bool png)
 {
 	int n1 = n;
 	std::ostringstream pngname;
-	const char *fname = fileName;  //   fileName;
+	const char *fname = fileName;  // fileName;
 	const char *gname = graphName; // graphName;
-	// printf("1  xxxxx1111  %s \n",fname);
-	// getchar();
+	// printf("%s \n", fname);
 	TFile f(fname, "UPDATE");
 	TCanvas *c2 = new TCanvas(graphName, "c2", 600, 400);
 
-	// printf("1  xxxxx2222  %s \n",fname);
-	// getchar();
+	// printf("%s \n", fname);
 	TMultiGraph *mg = new TMultiGraph();
-
-	// printf("2 \n");
 
 	mg->SetTitle("Energy");
 	mg->SetName(gname);
-	// printf("3 \n");
 
 	TGraph *gr = new TGraph(n, x, y);
 	gr->SetName(gname);
 	gr->SetLineColor(2);
-	// printf("4 \n");
 
 	gr->SetTitle(graphName);
 	gr->SetLineWidth(4);
@@ -529,12 +491,6 @@ void PrintError::PrintGraph1(int n, float *x, float *y, const char *fileName, co
 	(gr->GetXaxis())->SetTitle("Iterations");
 
 	mg->Add(gr);
-
-	// printf("5 \n");
-
-	// printf("6 \n");
-
-	//  getchar();
 	mg->Draw("AC*");
 	mg->GetXaxis()->SetTitle("Iterations");
 	mg->GetYaxis()->SetTitle("Energy");
@@ -550,8 +506,6 @@ void PrintError::PrintGraph1(int n, float *x, float *y, const char *fileName, co
 	}
 	f.Write();
 	f.Close();
-
-	// printf("7 \n");
 }
 
 void PrintError::CreateTree1(int n, float *y, float *err, float *exam, float *roc, float *rocExam, const char *fileName, const char *graphName)
@@ -589,22 +543,20 @@ void PrintError::CreateTree1(int n, float *y, float *err, float *exam, float *ro
 
 void PrintError::PrintGraphError1(int n, float *x, float *y, int nE, float *xE, float *yE, const char *fileName, const char *graphName, bool png)
 {
-	// const char *fname =   fileName;
-	// const char *gname =   graphName;
+	// const char *fname = fileName;
+	// const char *gname = graphName;
 	std::ostringstream pngname;
 	const char *fname = fileName;  //   fileName;
 	const char *gname = graphName; // graphName;
 
-	// printf("1  vvvv33333  %s \n",fname);
-	// ggetchar();
+	// printf("%s \n", fname);
 	int n1 = n;
 	TFile f(fname, "UPDATE");
 	TCanvas *c2 = new TCanvas(graphName, "c2", 600, 400);
 	// TGraph *g[3];
 	// Double_t x1[10] = {0,1,2,3,4,5,6,7,8,9};
 	// Double_t y1[10] = {1,2,3,4,5,5,4,3,2,1};
-	// printf("1  vvvv4444  %s \n",fname);
-	// getchar();
+	// printf("%s \n", fname);
 	TMultiGraph *mg = new TMultiGraph();
 	// for (int i=0; i<3; i++) {
 	//    g[i] = new TGraph(10, x1, y1);
@@ -613,9 +565,6 @@ void PrintError::PrintGraphError1(int n, float *x, float *y, int nE, float *xE, 
 	//    for (int j=0; j<10; j++) y1[j] = y1[j]-1;
 	//    mg->Add(g[i]);
 	// }
-	// printf("2 \n");
-
-	// getchar();
 
 	// Change the axis limits
 	// gPad->Modified();
@@ -626,26 +575,20 @@ void PrintError::PrintGraphError1(int n, float *x, float *y, int nE, float *xE, 
 	//(mg->GetXaxis())->SetTitle("Iterations");
 
 	mg->SetName(gname);
-	// printf("3 \n");
 
-	//   getchar();
 	// TCanvas *c5 = new TCanvas("c5","A Simple Graph Example",10,10,10,10);
 	// Double_t x1[n1],z[n1], y1[n1];
 	// c5->SetFillColor(42);
 	// c5->SetGrid();
 	// for (int i = 0; i<n; i++)
-	//{
-	//  x1[i]=i;
-	//  y1[i]=i;
-	//}
+	// {
+	//		x1[i]=i;
+	//  	y1[i]=i;
+	// }
 
-	//	getchar();
 	TGraph *gr = new TGraph(n, x, y);
 	gr->SetName(gname);
 	gr->SetLineColor(4);
-	// printf("4 \n");
-
-	// getchar();
 
 	gr->SetLineWidth(4);
 	gr->SetMarkerColor(4);
@@ -669,15 +612,10 @@ void PrintError::PrintGraphError1(int n, float *x, float *y, int nE, float *xE, 
 
 	mg->Add(gr1);
 	// gr->Draw("AC*");
-	//  gr->Write();
-	// printf("5 \n");
-
-	// getchar();
+	// gr->Write();
 
 	// mg->Write();
-	// printf("6 \n");
 
-	//  getchar();
 	mg->Draw("AC*");
 	mg->GetXaxis()->SetTitle("Iterations");
 	mg->GetYaxis()->SetTitle("Error");
@@ -696,11 +634,10 @@ void PrintError::PrintGraphError1(int n, float *x, float *y, int nE, float *xE, 
 	f.Write();
 	f.Close();
 	// gr->Print("TestGraph.pdf")
-	//  TCanvas::Update() draws the frame, after which one can change it
+	// TCanvas::Update() draws the frame, after which one can change it
 	// c5->Update();
 	// c5->GetFrame()->SetFillColor(21);
 	// c5->GetFrame()->SetBorderSize(12);
 	// c5->Modified();
 	// c5->SaveAs("Tets.pdf");
-	// printf("7 \n");
 }

@@ -77,11 +77,11 @@ void InputProcessor::BuildTrainingSet(bool trainOrExam)
     {
         // Open the file and construct the source tree
         bool IsWeightChange = false;
-        cout << "IsWeightChange!!!" << endl;
+
         if (strstr(sample.fileName.c_str(), "/afs/cern.ch/work/g/gvorotni/public/samples/13TeV/17-06-21_new_vars/tuples_merged/Wjets.root") != NULL)
         {
             IsWeightChange = true;
-            cout << "IsWeightChange!!!" << endl;
+            cout << "Weight is change!!!" << endl;
         }
 
         TFile srcFile(sample.fileName.c_str());
@@ -119,7 +119,7 @@ void InputProcessor::BuildTrainingSet(bool trainOrExam)
         // The formulas to be evaluated when reading the tree
         TTreeFormula *weight =
             new TTreeFormula(sample.trainWeight.c_str(), sample.trainWeight.c_str(), srcTree);
-        cout << "weight!!! " << sample.trainWeight.c_str() << endl;
+        cout << "Weight: " << sample.trainWeight.c_str() << endl;
 
         if (weight->GetNdim() == 0) // TTreeFormula sets it to zero in case of error
         {
@@ -156,7 +156,7 @@ void InputProcessor::BuildTrainingSet(bool trainOrExam)
             TrainEventList readTrainEvents(sample.trainEventsFileName, TrainEventList::Mode::Read);
             readTrainEvents.ReadList(sample.fileName);
             auto const &eventsForTraining = readTrainEvents.GetReadEvents();
-            cout << "EventsToTrainnig " << eventsForTraining.size() << '\n';
+            cout << "Events to training = " << eventsForTraining.size() << '\n';
             //  Read the requested events from the tree
             for (auto const &ev : eventsForTraining)
             {
@@ -190,7 +190,7 @@ void InputProcessor::BuildTrainingSet(bool trainOrExam)
         // The user specified the desired number of events in the training set only
         {
             // A vector to define the order according to which the tree will be read
-            log << info(1) << "No TrainningFileName " << nEntries << eom;
+            log << info(1) << "No TrainingFileName entries = " << nEntries << eom;
             vector<unsigned long> eventsToRead;
             eventsToRead.reserve(nEntries);
 
@@ -215,7 +215,7 @@ void InputProcessor::BuildTrainingSet(bool trainOrExam)
 
             if (trainListCurFile.size() > 0)
             {
-                log << info(1) << "No TrainningFileName " << eom;
+                log << info(1) << "No TrainingFileName" << eom;
 
                 for (unsigned index = 0; index < trainListCurFile.front(); ++index)
                     untestedEvents.push_back(index);
@@ -242,8 +242,8 @@ void InputProcessor::BuildTrainingSet(bool trainOrExam)
             // Read the tree in the specified order and fill the local training set
             unsigned long nEntriesRead = 0;
 
-            log << info(1) << "No TrainningFileName maxFraction " << sample.maxFractionTrainEvents << eom;
-            log << info(1) << "No TrainningFileName sample.maxTrainEvents " << sample.maxTrainEvents << eom;
+            log << info(1) << "No TrainingFileName maxFraction = " << sample.maxFractionTrainEvents << eom;
+            log << info(1) << "No TrainingFileName sample.maxTrainEvents = " << sample.maxTrainEvents << eom;
             while (nEntriesRead < nEntries * sample.maxFractionTrainEvents and
                    nEntriesRead < nEntries)
             {
@@ -265,14 +265,14 @@ void InputProcessor::BuildTrainingSet(bool trainOrExam)
 
                 if (localTrainingSet.size() == sample.maxTrainEvents)
                 {
-                    log << info(1) << "Break!!! " << nEntriesRead << eom;
+                    log << info(1) << "Break!!! EntriesRead = " << nEntriesRead << eom;
                     break;
                 }
             }
 
             nEventsTriedForTraining = localTrainingSet.size();
 
-            log << info(1) << "No TrainningFileName " << nEntriesRead << eom;
+            log << info(1) << "No TrainingFileName EntriesRead = " << nEntriesRead << eom;
 
             // If needed, extend the list of events tried for training for the current source file
             if (nEntriesRead > trainListCurFile.size()) // some of untestedEvents were read
@@ -297,7 +297,7 @@ void InputProcessor::BuildTrainingSet(bool trainOrExam)
         // corrected
 
         double const weightCorrFactor = double(nEntries) / nEventsTriedForTraining;
-        cout << " " << nEventsTriedForTraining << " " << nEntries << " weightcorrFactor = " << weightCorrFactor << endl;
+        cout << "Events tried for training = " << nEventsTriedForTraining << ", entries = " << nEntries << ", weightcorrFactor = " << weightCorrFactor << endl;
 
         for (Event &event : localTrainingSet)
         {
@@ -352,7 +352,7 @@ void InputProcessor::BuildTrainingSet(bool trainOrExam)
     {
         double const corrFactors[2] =
             {0.5 * nEvents / sumWeights[0], 0.5 * nEvents / sumWeights[1]};
-        cout << " corrFactor[1]= " << corrFactors[0] << " corrFactor[2]= " << corrFactors[1] << endl;
+        cout << "corrFactor[1] = " << corrFactors[0] << ", corrFactor[2] = " << corrFactors[1] << endl;
         for (Event &event : trainingSet)
             event.weight *= corrFactors[event.type];
     }
@@ -360,7 +360,7 @@ void InputProcessor::BuildTrainingSet(bool trainOrExam)
     case Config::Reweighting::Common:
     {
         double const corrFactor = nEvents / (sumWeights[0] + sumWeights[1]);
-        cout << " corrFactor= " << corrFactor << endl;
+        cout << "corrFactor = " << corrFactor << endl;
         for (Event &event : trainingSet)
             event.weight *= corrFactor;
     }
