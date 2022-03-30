@@ -343,7 +343,6 @@ void Config::ReadSamples(string const &path, unsigned type, string const &defTra
 
                 if (boost::iends_with(number.c_str(), "%")) // this is a fraction
                 {
-                    log << info(1) << "events1 " << eom;
                     number = number.substr(0, number.length() - 1);
                     double const fraction = atof(number.c_str()) / 100.;
 
@@ -351,7 +350,7 @@ void Config::ReadSamples(string const &path, unsigned type, string const &defTra
                     {
                         log << error << "Setting \"" << stgNumEvents.getPath() << "[" << i << "]\" makes the training set empty. The number might be misformated." << eom;
                     }
-                    log << info(1) << "events1 " << number << " " << fraction << eom;
+                    log << info(1) << "Events = " << number << ", fraction = " << fraction << eom;
                     if (not fractionFound or fraction < sample.maxFractionTrainEvents)
                         sample.maxFractionTrainEvents = fraction;
 
@@ -360,7 +359,6 @@ void Config::ReadSamples(string const &path, unsigned type, string const &defTra
                 else
                 {
                     long const nEvents = atol(number.c_str());
-                    log << info(1) << "events2 " << eom;
                     if (nEvents <= 0)
                     {
                         log << error << "Setting \"" << stgNumEvents.getPath() << "[" << i << "]\" makes the training set empty. The number might be misformated." << eom;
@@ -370,7 +368,7 @@ void Config::ReadSamples(string const &path, unsigned type, string const &defTra
                         sample.maxTrainEvents = nEvents;
 
                     simpleNumberFound = true;
-                    log << info(1) << "events " << nEvents << eom;
+                    log << info(1) << "Events = " << nEvents << eom;
                 }
             }
 
