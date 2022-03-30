@@ -115,7 +115,7 @@ void InputProcessor::BuildTrainingSet(bool trainOrExam)
 
         unsigned long const nEntries = srcTree->GetEntries();
 
-        log << info(1) << "nEntries = " << nEntries << eom;
+        log << info(1) << "Entries = " << nEntries << eom;
         // The formulas to be evaluated when reading the tree
         TTreeFormula *weight =
             new TTreeFormula(sample.trainWeight.c_str(), sample.trainWeight.c_str(), srcTree);
@@ -243,7 +243,7 @@ void InputProcessor::BuildTrainingSet(bool trainOrExam)
             unsigned long nEntriesRead = 0;
 
             log << info(1) << "No TrainingFileName maxFraction = " << sample.maxFractionTrainEvents << eom;
-            log << info(1) << "No TrainingFileName sample.maxTrainEvents = " << sample.maxTrainEvents << eom;
+            log << info(1) << "No TrainingFileName maxTrainEvents = " << sample.maxTrainEvents << eom;
             while (nEntriesRead < nEntries * sample.maxFractionTrainEvents and
                    nEntriesRead < nEntries)
             {
@@ -282,7 +282,7 @@ void InputProcessor::BuildTrainingSet(bool trainOrExam)
                                         untestedEvents.begin() + (nEntriesRead - trainListCurFile.size()));
             }
 
-            log << info(0) << "Sample \"" << sample.fileName << "\" number of events " << nEntries << " train number " << nEntriesRead << " ratio " << 100. * float(nEntriesRead) / float(nEntries) << eom;
+            log << info(0) << "Sample: \"" << sample.fileName << "\", number of events = " << nEntries << ", train number = " << nEntriesRead << ", ratio = " << 100. * float(nEntriesRead) / float(nEntries) << eom;
         }
 
         samples_index++;
