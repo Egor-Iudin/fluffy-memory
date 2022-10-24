@@ -1,6 +1,6 @@
 /* ----------------------------------------------------------------------------
    libconfig - A library for processing structured configuration files
-   Copyright (C) 2005-2010  Mark A Lindner
+   Copyright (C) 2005-2018  Mark A Lindner
 
    This file is part of libconfig.
 
@@ -37,6 +37,18 @@ namespace libconfig {
 
 // ---------------------------------------------------------------------------
 
+static const char **__include_func(config_t *config,
+                                   const char *include_dir,
+                                   const char *path,
+                                   const char **error)
+{
+  (void)include_dir;
+  Config *self = reinterpret_cast<Config *>(config_get_hook(config));
+  return(self->evaluateIncludePath(path, error));
+}
+
+// ---------------------------------------------------------------------------
+
 ParseException::ParseException(const char *file, int line, const char *error)
   : _file(file ? ::strdup(file) : NULL), _line(line), _error(error)
 {
@@ -45,7 +57,8 @@ ParseException::ParseException(const char *file, int line, const char *error)
 // ---------------------------------------------------------------------------
 
 ParseException::ParseException(const ParseException &other)
-  : _file(other._file ? ::strdup(other._file) : NULL),
+  : ConfigException(other),
+    _file(other._file ? ::strdup(other._file) : NULL),
     _line(other._line),
     _error(other._error)
 {
@@ -53,14 +66,14 @@ ParseException::ParseException(const ParseException &other)
 
 // ---------------------------------------------------------------------------
 
-ParseException::~ParseException() throw()
+ParseException::~ParseException() LIBCONFIGXX_NOEXCEPT
 {
   ::free((void *)_file);
 }
 
 // ---------------------------------------------------------------------------
 
-const char *ParseException::what() const throw()
+const char *ParseException::what() const LIBCONFIGXX_NOEXCEPT
 {
   return("ParseException");
 }
@@ -182,6 +195,7 @@ const char *SettingException::getPath() const
 // ---------------------------------------------------------------------------
 
 SettingException::SettingException(const SettingException &other)
+  : ConfigException(other)
 {
   _path = ::strdup(other._path);
 }
@@ -198,14 +212,14 @@ SettingException &SettingException::operator=(const SettingException &other)
 
 // ---------------------------------------------------------------------------
 
-const char *SettingException::what() const throw()
+const char *SettingException::what() const LIBCONFIGXX_NOEXCEPT
 {
   return("SettingException");
 }
 
 // ---------------------------------------------------------------------------
 
-SettingException::~SettingException() throw()
+SettingException::~SettingException() LIBCONFIGXX_NOEXCEPT
 {
   ::free(_path);
 }
@@ -234,7 +248,7 @@ SettingTypeException::SettingTypeException(const Setting &setting,
 
 // ---------------------------------------------------------------------------
 
-const char *SettingTypeException::what() const throw()
+const char *SettingTypeException::what() const LIBCONFIGXX_NOEXCEPT
 {
   return("SettingTypeException");
 }
@@ -264,7 +278,7 @@ SettingNotFoundException::SettingNotFoundException(const char *path)
 
 // ---------------------------------------------------------------------------
 
-const char *SettingNotFoundException::what() const throw()
+const char *SettingNotFoundException::what() const LIBCONFIGXX_NOEXCEPT
 {
   return("SettingNotFoundException");
 }
@@ -279,14 +293,14 @@ SettingNameException::SettingNameException(const Setting &setting,
 
 // ---------------------------------------------------------------------------
 
-const char *SettingNameException::what() const throw()
+const char *SettingNameException::what() const LIBCONFIGXX_NOEXCEPT
 {
   return("SettingNameException");
 }
 
 // ---------------------------------------------------------------------------
 
-const char *FileIOException::what() const throw()
+const char *FileIOException::what() const LIBCONFIGXX_NOEXCEPT
 {
   return("FileIOException");
 }
@@ -305,7 +319,9 @@ Config::Config()
 {
   _config = new config_t;
   config_init(_config);
+  config_set_hook(_config, reinterpret_cast<void *>(this));
   config_set_destructor(_config, ConfigDestructor);
+  config_set_include_func(_config, __include_func);
 }
 
 // ---------------------------------------------------------------------------
@@ -318,16 +334,37 @@ Config::~Config()
 
 // ---------------------------------------------------------------------------
 
-void Config::setAutoConvert(bool flag)
+void Config::clear()
 {
-  config_set_auto_convert(_config, (flag ? CONFIG_TRUE : CONFIG_FALSE));
+  config_clear(_config);
 }
 
 // ---------------------------------------------------------------------------
 
-bool Config::getAutoConvert() const
+void Config::setOptions(int options)
 {
-  return(config_get_auto_convert(_config) != CONFIG_FALSE);
+  config_set_options(_config, options);
+}
+
+// ---------------------------------------------------------------------------
+
+int Config::getOptions() const
+{
+  return(config_get_options(_config));
+}
+
+// ---------------------------------------------------------------------------
+
+void Config::setOption(Config::Option option, bool flag)
+{
+  config_set_option(_config, (int)option, flag ? CONFIG_TRUE : CONFIG_FALSE);
+}
+
+// ---------------------------------------------------------------------------
+
+bool Config::getOption(Config::Option option) const
+{
+  return(config_get_option(_config, (int)option) == CONFIG_TRUE);
 }
 
 // ---------------------------------------------------------------------------
@@ -344,30 +381,51 @@ void Config::setDefaultFormat(Setting::Format format)
 
 // ---------------------------------------------------------------------------
 
-void Config::setTabWidth(unsigned short width) throw()
+void Config::setTabWidth(unsigned short width)
 {
   config_set_tab_width(_config, width);
 }
 
 // ---------------------------------------------------------------------------
 
-unsigned short Config::getTabWidth() const throw()
+unsigned short Config::getTabWidth() const
 {
   return(config_get_tab_width(_config));
 }
 
 // ---------------------------------------------------------------------------
 
-void Config::setIncludeDir(const char *includeDir) throw()
+void Config::setFloatPrecision(unsigned short digits)
+{
+  return (config_set_float_precision(_config,digits));
+}
+
+// ---------------------------------------------------------------------------
+
+unsigned short Config::getFloatPrecision() const
+{
+  return (config_get_float_precision(_config));
+}
+
+// ---------------------------------------------------------------------------
+
+void Config::setIncludeDir(const char *includeDir)
 {
   config_set_include_dir(_config, includeDir);
 }
 
 // ---------------------------------------------------------------------------
 
-const char *Config::getIncludeDir() const throw()
+const char *Config::getIncludeDir() const
 {
   return(config_get_include_dir(_config));
+}
+
+// ---------------------------------------------------------------------------
+
+const char **Config::evaluateIncludePath(const char *path, const char **error)
+{
+  return(config_default_include_func(_config, getIncludeDir(), path, error));
 }
 
 // ---------------------------------------------------------------------------
@@ -393,7 +451,7 @@ void Config::handleError() const
 
 // ---------------------------------------------------------------------------
 
-void Config::read(FILE *stream) throw(ParseException)
+void Config::read(FILE *stream)
 {
   if(! config_read(_config, stream))
     handleError();
@@ -401,7 +459,7 @@ void Config::read(FILE *stream) throw(ParseException)
 
 // ---------------------------------------------------------------------------
 
-void Config::readString(const char *str) throw(ParseException)
+void Config::readString(const char *str)
 {
   if(! config_read_string(_config, str))
     handleError();
@@ -416,8 +474,7 @@ void Config::write(FILE *stream) const
 
 // ---------------------------------------------------------------------------
 
-void Config::readFile(const char *filename) throw(FileIOException,
-                                                  ParseException)
+void Config::readFile(const char *filename)
 {
   if(! config_read_file(_config, filename))
     handleError();
@@ -425,7 +482,7 @@ void Config::readFile(const char *filename) throw(FileIOException,
 
 // ---------------------------------------------------------------------------
 
-void Config::writeFile(const char *filename) throw(FileIOException)
+void Config::writeFile(const char *filename)
 {
   if(! config_write_file(_config, filename))
     handleError();
@@ -434,7 +491,6 @@ void Config::writeFile(const char *filename) throw(FileIOException)
 // ---------------------------------------------------------------------------
 
 Setting & Config::lookup(const char *path) const
-  throw(SettingNotFoundException)
 {
   config_setting_t *s = config_lookup(_config, path);
   if(! s)
@@ -445,7 +501,7 @@ Setting & Config::lookup(const char *path) const
 
 // ---------------------------------------------------------------------------
 
-bool Config::exists(const char *path) const throw()
+bool Config::exists(const char *path) const
 {
   config_setting_t *s = config_lookup(_config, path);
 
@@ -461,71 +517,70 @@ bool Config::exists(const char *path) const throw()
     V = (T)s;                                   \
     return(true);                               \
   }                                             \
-  catch(ConfigException)                        \
+  catch(const ConfigException &)                \
   {                                             \
     return(false);                              \
   }
 
 // ---------------------------------------------------------------------------
 
-bool Config::lookupValue(const char *path, bool &value) const throw()
+bool Config::lookupValue(const char *path, bool &value) const
 {
   CONFIG_LOOKUP_NO_EXCEPTIONS(path, bool, value);
 }
 
 // ---------------------------------------------------------------------------
 
-bool Config::lookupValue(const char *path, int &value) const throw()
+bool Config::lookupValue(const char *path, int &value) const
 {
   CONFIG_LOOKUP_NO_EXCEPTIONS(path, int, value);
 }
 
 // ---------------------------------------------------------------------------
 
-bool Config::lookupValue(const char *path, unsigned int &value) const throw()
+bool Config::lookupValue(const char *path, unsigned int &value) const
 {
   CONFIG_LOOKUP_NO_EXCEPTIONS(path, unsigned int, value);
 }
 
 // ---------------------------------------------------------------------------
 
-bool Config::lookupValue(const char *path, long long &value) const throw()
+bool Config::lookupValue(const char *path, long long &value) const
 {
   CONFIG_LOOKUP_NO_EXCEPTIONS(path, long long, value);
 }
 
 // ---------------------------------------------------------------------------
 
-bool Config::lookupValue(const char *path, unsigned long long &value)
-  const throw()
+bool Config::lookupValue(const char *path, unsigned long long &value) const
 {
   CONFIG_LOOKUP_NO_EXCEPTIONS(path, unsigned long long, value);
 }
 
 // ---------------------------------------------------------------------------
 
-bool Config::lookupValue(const char *path, double &value) const throw()
+bool Config::lookupValue(const char *path, double &value) const
 {
   CONFIG_LOOKUP_NO_EXCEPTIONS(path, double, value);
 }
 
 // ---------------------------------------------------------------------------
 
-bool Config::lookupValue(const char *path, float &value) const throw()
+bool Config::lookupValue(const char *path, float &value) const
 {
   CONFIG_LOOKUP_NO_EXCEPTIONS(path, float, value);
 }
 
 // ---------------------------------------------------------------------------
 
-bool Config::lookupValue(const char *path, const char *&value) const throw()
+bool Config::lookupValue(const char *path, const char *&value) const
 {
   CONFIG_LOOKUP_NO_EXCEPTIONS(path, const char *, value);
 }
 
 // ---------------------------------------------------------------------------
 
-bool Config::lookupValue(const char *path, std::string &value) const throw()
+bool Config::lookupValue(const char *path, std::string &value) const
 {
   CONFIG_LOOKUP_NO_EXCEPTIONS(path, const char *, value);
 }
@@ -597,14 +652,14 @@ Setting::Setting(config_setting_t *setting)
 
 // ---------------------------------------------------------------------------
 
-Setting::~Setting() throw()
+Setting::~Setting()
 {
   _setting = NULL;
 }
 
 // ---------------------------------------------------------------------------
 
-void Setting::setFormat(Format format) throw()
+void Setting::setFormat(Format format)
 {
   if((_type == TypeInt) || (_type == TypeInt64))
   {
@@ -621,7 +676,7 @@ void Setting::setFormat(Format format) throw()
 
 // ---------------------------------------------------------------------------
 
-Setting::operator bool() const throw(SettingTypeException) 
+Setting::operator bool() const
 {
   assertType(TypeBoolean);
 
@@ -630,7 +685,7 @@ Setting::operator bool() const throw(SettingTypeException)
 
 // ---------------------------------------------------------------------------
 
-Setting::operator int() const throw(SettingTypeException)
+Setting::operator int() const
 {
   assertType(TypeInt);
 
@@ -639,21 +694,18 @@ Setting::operator int() const throw(SettingTypeException)
 
 // ---------------------------------------------------------------------------
 
-Setting::operator unsigned int() const throw(SettingTypeException)
+Setting::operator unsigned int() const
 {
   assertType(TypeInt);
 
   int v = config_setting_get_int(_setting);
-
-  if(v < 0)
-    v = 0;
 
   return(static_cast<unsigned int>(v));
 }
 
 // ---------------------------------------------------------------------------
 
-Setting::operator long() const throw(SettingTypeException)
+Setting::operator long() const
 {
   if(sizeof(long) == sizeof(long long))
     return operator long long();
@@ -663,7 +715,7 @@ Setting::operator long() const throw(SettingTypeException)
 
 // ---------------------------------------------------------------------------
 
-Setting::operator unsigned long() const throw(SettingTypeException)
+Setting::operator unsigned long() const
 {
   if(sizeof(long) == sizeof(long long))
     return operator unsigned long long();
@@ -673,7 +725,7 @@ Setting::operator unsigned long() const throw(SettingTypeException)
 
 // ---------------------------------------------------------------------------
 
-Setting::operator long long() const throw(SettingTypeException)
+Setting::operator long long() const
 {
   assertType(TypeInt64);
 
@@ -682,21 +734,18 @@ Setting::operator long long() const throw(SettingTypeException)
 
 // ---------------------------------------------------------------------------
 
-Setting::operator unsigned long long() const throw(SettingTypeException)
+Setting::operator unsigned long long() const
 {
   assertType(TypeInt64);
 
   long long v = config_setting_get_int64(_setting);
-
-  if(v < INT64_CONST(0))
-    v = INT64_CONST(0);
 
   return(static_cast<unsigned long long>(v));
 }
 
 // ---------------------------------------------------------------------------
 
-Setting::operator double() const throw(SettingTypeException)
+Setting::operator double() const
 {
   assertType(TypeFloat);
 
@@ -705,7 +754,7 @@ Setting::operator double() const throw(SettingTypeException)
 
 // ---------------------------------------------------------------------------
 
-Setting::operator float() const throw(SettingTypeException)
+Setting::operator float() const
 {
   assertType(TypeFloat);
 
@@ -715,7 +764,7 @@ Setting::operator float() const throw(SettingTypeException)
 
 // ---------------------------------------------------------------------------
 
-Setting::operator const char *() const throw(SettingTypeException)
+Setting::operator const char *() const
 {
   assertType(TypeString);
 
@@ -724,7 +773,7 @@ Setting::operator const char *() const throw(SettingTypeException)
 
 // ---------------------------------------------------------------------------
 
-Setting::operator std::string() const throw(SettingTypeException)
+Setting::operator std::string() const
 {
   assertType(TypeString);
 
@@ -739,7 +788,7 @@ Setting::operator std::string() const throw(SettingTypeException)
 
 // ---------------------------------------------------------------------------
 
-Setting & Setting::operator=(bool value) throw(SettingTypeException)
+Setting & Setting::operator=(bool value)
 {
   assertType(TypeBoolean);
 
@@ -750,7 +799,7 @@ Setting & Setting::operator=(bool value) throw(SettingTypeException)
 
 // ---------------------------------------------------------------------------
 
-Setting & Setting::operator=(int value) throw(SettingTypeException)
+Setting & Setting::operator=(int value)
 {
   assertType(TypeInt);
 
@@ -761,7 +810,7 @@ Setting & Setting::operator=(int value) throw(SettingTypeException)
 
 // ---------------------------------------------------------------------------
 
-Setting & Setting::operator=(long value) throw(SettingTypeException)
+Setting & Setting::operator=(long value)
 {
   if(sizeof(long) == sizeof(long long))
     return(operator=(static_cast<long long>(value)));
@@ -772,7 +821,6 @@ Setting & Setting::operator=(long value) throw(SettingTypeException)
 // ---------------------------------------------------------------------------
 
 Setting & Setting::operator=(const long long &value)
-  throw(SettingTypeException)
 {
   assertType(TypeInt64);
 
@@ -783,7 +831,7 @@ Setting & Setting::operator=(const long long &value)
 
 // ---------------------------------------------------------------------------
 
-Setting & Setting::operator=(const double &value) throw(SettingTypeException)
+Setting & Setting::operator=(const double &value)
 {
   assertType(TypeFloat);
 
@@ -794,7 +842,7 @@ Setting & Setting::operator=(const double &value) throw(SettingTypeException)
 
 // ---------------------------------------------------------------------------
 
-Setting & Setting::operator=(float value) throw(SettingTypeException)
+Setting & Setting::operator=(float value)
 {
   assertType(TypeFloat);
 
@@ -807,7 +855,7 @@ Setting & Setting::operator=(float value) throw(SettingTypeException)
 
 // ---------------------------------------------------------------------------
 
-Setting & Setting::operator=(const char *value) throw(SettingTypeException)
+Setting & Setting::operator=(const char *value)
 {
   assertType(TypeString);
 
@@ -819,7 +867,6 @@ Setting & Setting::operator=(const char *value) throw(SettingTypeException)
 // ---------------------------------------------------------------------------
 
 Setting & Setting::operator=(const std::string &value)
-  throw(SettingTypeException)
 {
   assertType(TypeString);
 
@@ -830,8 +877,35 @@ Setting & Setting::operator=(const std::string &value)
 
 // ---------------------------------------------------------------------------
 
+Setting & Setting::lookup(const char *path) const
+{
+  assertType(TypeGroup);
+
+  config_setting_t *setting = config_setting_lookup(_setting, path);
+
+  if(! setting)
+    throw SettingNotFoundException(*this, path);
+
+  return(wrapSetting(setting));
+}
+
+// ---------------------------------------------------------------------------
+
+Setting & Setting::operator[](const char *name) const
+{
+  assertType(TypeGroup);
+
+  config_setting_t *setting = config_setting_get_member(_setting, name);
+
+  if(! setting)
+    throw SettingNotFoundException(*this, name);
+
+  return(wrapSetting(setting));
+}
+
+// ---------------------------------------------------------------------------
+
 Setting & Setting::operator[](int i) const
-  throw(SettingTypeException, SettingNotFoundException)
 {
   if((_type != TypeArray) && (_type != TypeGroup) && (_type != TypeList))
     throw SettingTypeException(*this, i);
@@ -846,21 +920,6 @@ Setting & Setting::operator[](int i) const
 
 // ---------------------------------------------------------------------------
 
-Setting & Setting::operator[](const char *key) const
-  throw(SettingTypeException, SettingNotFoundException)
-{
-  assertType(TypeGroup);
-
-  config_setting_t *setting = config_setting_get_member(_setting, key);
-
-  if(! setting)
-    throw SettingNotFoundException(*this, key);
-
-  return(wrapSetting(setting));
-}
-
-// ---------------------------------------------------------------------------
-
 #define SETTING_LOOKUP_NO_EXCEPTIONS(K, T, V)   \
   try                                           \
   {                                             \
@@ -868,79 +927,77 @@ Setting & Setting::operator[](const char *key) const
     V = (T)s;                                   \
     return(true);                               \
   }                                             \
-  catch(ConfigException)                        \
+  catch(const ConfigException &)                \
   {                                             \
     return(false);                              \
   }
 
 // ---------------------------------------------------------------------------
 
-bool Setting::lookupValue(const char *name, bool &value) const throw()
+bool Setting::lookupValue(const char *name, bool &value) const
 {
   SETTING_LOOKUP_NO_EXCEPTIONS(name, bool, value);
 }
 
 // ---------------------------------------------------------------------------
 
-bool Setting::lookupValue(const char *name, int &value) const throw()
+bool Setting::lookupValue(const char *name, int &value) const
 {
   SETTING_LOOKUP_NO_EXCEPTIONS(name, int, value);
 }
 
 // ---------------------------------------------------------------------------
 
-bool Setting::lookupValue(const char *name, unsigned int &value)
-  const throw()
+bool Setting::lookupValue(const char *name, unsigned int &value) const
 {
   SETTING_LOOKUP_NO_EXCEPTIONS(name, unsigned int, value);
 }
 
 // ---------------------------------------------------------------------------
 
-bool Setting::lookupValue(const char *name, long long &value) const throw()
+bool Setting::lookupValue(const char *name, long long &value) const
 {
   SETTING_LOOKUP_NO_EXCEPTIONS(name, long long, value);
 }
 
 // ---------------------------------------------------------------------------
 
-bool Setting::lookupValue(const char *name, unsigned long long &value)
-  const throw()
+bool Setting::lookupValue(const char *name, unsigned long long &value) const
 {
   SETTING_LOOKUP_NO_EXCEPTIONS(name, unsigned long long, value);
 }
 
 // ---------------------------------------------------------------------------
 
-bool Setting::lookupValue(const char *name, double &value) const throw()
+bool Setting::lookupValue(const char *name, double &value) const
 {
   SETTING_LOOKUP_NO_EXCEPTIONS(name, double, value);
 }
 
 // ---------------------------------------------------------------------------
 
-bool Setting::lookupValue(const char *name, float &value) const throw()
+bool Setting::lookupValue(const char *name, float &value) const
 {
   SETTING_LOOKUP_NO_EXCEPTIONS(name, float, value);
 }
 
 // ---------------------------------------------------------------------------
 
-bool Setting::lookupValue(const char *name, const char *&value) const throw()
+bool Setting::lookupValue(const char *name, const char *&value) const
 {
   SETTING_LOOKUP_NO_EXCEPTIONS(name, const char *, value);
 }
 
 // ---------------------------------------------------------------------------
 
-bool Setting::lookupValue(const char *name, std::string &value) const throw()
+bool Setting::lookupValue(const char *name, std::string &value) const
 {
   SETTING_LOOKUP_NO_EXCEPTIONS(name, const char *, value);
 }
 
 // ---------------------------------------------------------------------------
 
-bool Setting::exists(const char *name) const throw()
+bool Setting::exists(const char *name) const
 {
   if(_type != TypeGroup)
     return(false);
@@ -952,14 +1009,14 @@ bool Setting::exists(const char *name) const throw()
 
 // ---------------------------------------------------------------------------
 
-int Setting::getLength() const throw()
+int Setting::getLength() const
 {
   return(config_setting_length(_setting));
 }
 
 // ---------------------------------------------------------------------------
 
-const char * Setting::getName() const throw()
+const char * Setting::getName() const
 {
   return(config_setting_name(_setting));
 }
@@ -977,7 +1034,7 @@ std::string Setting::getPath() const
 
 // ---------------------------------------------------------------------------
 
-const Setting & Setting::getParent() const throw(SettingNotFoundException)
+const Setting & Setting::getParent() const
 {
   config_setting_t *setting = config_setting_parent(_setting);
 
@@ -989,7 +1046,7 @@ const Setting & Setting::getParent() const throw(SettingNotFoundException)
 
 // ---------------------------------------------------------------------------
 
-Setting & Setting::getParent() throw(SettingNotFoundException)
+Setting & Setting::getParent()
 {
   config_setting_t *setting = config_setting_parent(_setting);
 
@@ -1001,28 +1058,28 @@ Setting & Setting::getParent() throw(SettingNotFoundException)
 
 // ---------------------------------------------------------------------------
 
-unsigned int Setting::getSourceLine() const throw()
+unsigned int Setting::getSourceLine() const
 {
   return(config_setting_source_line(_setting));
 }
 
 // ---------------------------------------------------------------------------
 
-const char *Setting::getSourceFile() const throw()
+const char *Setting::getSourceFile() const
 {
   return(config_setting_source_file(_setting));
 }
 
 // ---------------------------------------------------------------------------
 
-bool Setting::isRoot() const throw()
+bool Setting::isRoot() const
 {
   return(config_setting_is_root(_setting));
 }
 
 // ---------------------------------------------------------------------------
 
-int Setting::getIndex() const throw()
+int Setting::getIndex() const
 {
   return(config_setting_index(_setting));
 }
@@ -1030,7 +1087,6 @@ int Setting::getIndex() const throw()
 // ---------------------------------------------------------------------------
 
 void Setting::remove(const char *name)
-  throw(SettingTypeException, SettingNotFoundException)
 {
   assertType(TypeGroup);
 
@@ -1041,7 +1097,6 @@ void Setting::remove(const char *name)
 // ---------------------------------------------------------------------------
 
 void Setting::remove(unsigned int idx)
-  throw(SettingTypeException, SettingNotFoundException)
 {
   if((_type != TypeArray) && (_type != TypeGroup) && (_type != TypeList))
     throw SettingTypeException(*this, idx);
@@ -1053,7 +1108,6 @@ void Setting::remove(unsigned int idx)
 // ---------------------------------------------------------------------------
 
 Setting & Setting::add(const char *name, Setting::Type type)
-  throw(SettingNameException, SettingTypeException)
 {
   assertType(TypeGroup);
 
@@ -1072,7 +1126,7 @@ Setting & Setting::add(const char *name, Setting::Type type)
 
 // ---------------------------------------------------------------------------
 
-Setting & Setting::add(Setting::Type type) throw(SettingTypeException)
+Setting & Setting::add(Setting::Type type)
 {
   if((_type != TypeArray) && (_type != TypeList))
     throw SettingTypeException(*this);
@@ -1132,7 +1186,7 @@ Setting & Setting::add(Setting::Type type) throw(SettingTypeException)
 
 // ---------------------------------------------------------------------------
 
-void Setting::assertType(Setting::Type type) const throw(SettingTypeException)
+void Setting::assertType(Setting::Type type) const
 {
   if(type != _type)
   {
@@ -1162,6 +1216,273 @@ Setting & Setting::wrapSetting(config_setting_t *s)
 
 // ---------------------------------------------------------------------------
 
-}; // namespace libconfig
+Setting::iterator Setting::begin()
+{ return(iterator(*this)); }
 
-// eof
+// ---------------------------------------------------------------------------
+
+Setting::iterator Setting::end()
+{ return(iterator(*this, true)); }
+
+// ---------------------------------------------------------------------------
+
+Setting::const_iterator Setting::begin() const
+{ return(const_iterator(*this)); }
+
+// ---------------------------------------------------------------------------
+
+Setting::const_iterator Setting::end() const
+{ return(const_iterator(*this, true)); }
+
+// ---------------------------------------------------------------------------
+
+SettingIterator::SettingIterator(Setting& setting, bool endIterator)
+  : _setting(&setting),
+    _count(setting.getLength()),
+    _idx(endIterator ? _count : 0)
+{
+  if(!setting.isAggregate())
+    throw SettingTypeException(setting);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingIterator::SettingIterator(const SettingIterator &other)
+  : _setting(other._setting),
+    _count(other._count),
+    _idx(other._idx)
+{
+}
+
+// ---------------------------------------------------------------------------
+
+SettingIterator& SettingIterator::operator=(const SettingIterator &other)
+{
+  _setting = other._setting;
+  _count = other._count;
+  _idx = other._idx;
+
+  return(*this);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingIterator& SettingIterator::operator++()
+{
+  ++_idx;
+
+  return(*this);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingIterator SettingIterator::operator++(int)
+{
+  SettingIterator tmp(*this);
+  ++_idx;
+
+  return(tmp);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingIterator& SettingIterator::operator--()
+{
+  --_idx;
+
+  return(*this);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingIterator SettingIterator::operator--(int)
+{
+  SettingIterator tmp(*this);
+  --_idx;
+
+  return(tmp);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingIterator SettingIterator::operator+(int offset) const
+{
+  SettingIterator copy(*this);
+  copy += offset;
+
+  return(copy);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingIterator& SettingIterator::operator+=(int offset)
+{
+  _idx += offset;
+
+  return(*this);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingIterator operator+(int offset, SettingIterator& si)
+{
+  SettingIterator copy(si);
+  copy += offset;
+
+  return(copy);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingIterator SettingIterator::operator-(int offset) const
+{
+  SettingIterator copy(*this);
+  copy._idx -= offset;
+
+  return(copy);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingIterator& SettingIterator::operator-=(int offset)
+{
+  _idx -= offset;
+
+  return(*this);
+}
+
+// ---------------------------------------------------------------------------
+
+int SettingIterator::operator-(SettingIterator const &other) const
+{
+  return(_idx - other._idx);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingConstIterator::SettingConstIterator(const Setting &setting,
+                                           bool endIterator)
+  : _setting(&setting),
+    _count(setting.getLength()),
+    _idx(endIterator ? _count : 0)
+{
+  if(!setting.isAggregate())
+    throw SettingTypeException(setting);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingConstIterator::SettingConstIterator(const SettingConstIterator &other)
+  : _setting(other._setting),
+    _count(other._count),
+    _idx(other._idx)
+{
+}
+
+// ---------------------------------------------------------------------------
+
+SettingConstIterator& SettingConstIterator::operator=(
+  const SettingConstIterator &other)
+{
+  _setting = other._setting;
+  _count = other._count;
+  _idx = other._idx;
+  return(*this);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingConstIterator& SettingConstIterator::operator++()
+{
+  ++_idx;
+
+  return(*this);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingConstIterator SettingConstIterator::operator++(int)
+{
+  SettingConstIterator tmp(*this);
+  ++_idx;
+
+  return(tmp);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingConstIterator& SettingConstIterator::operator--()
+{
+  --_idx;
+
+  return(*this);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingConstIterator SettingConstIterator::operator--(int)
+{
+  SettingConstIterator tmp(*this);
+  --_idx;
+
+  return(tmp);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingConstIterator SettingConstIterator::operator+(int offset) const
+{
+  SettingConstIterator copy(*this);
+  copy += offset;
+
+  return(copy);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingConstIterator& SettingConstIterator::operator+=(int offset)
+{
+  _idx += offset;
+
+  return(*this);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingConstIterator operator+(int offset, SettingConstIterator &si)
+{
+  SettingConstIterator copy(si);
+  copy += offset;
+
+  return(copy);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingConstIterator SettingConstIterator::operator-(int offset) const
+{
+  SettingConstIterator copy(*this);
+  copy -= offset;
+
+  return(copy);
+}
+
+// ---------------------------------------------------------------------------
+
+SettingConstIterator& SettingConstIterator::operator-=(int offset)
+{
+  _idx -= offset;
+
+  return(*this);
+}
+
+// ---------------------------------------------------------------------------
+
+int SettingConstIterator::operator-(SettingConstIterator const &other) const
+{
+  return(_idx - other._idx);
+}
+
+
+} // namespace libconfig
+

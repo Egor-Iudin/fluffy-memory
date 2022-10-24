@@ -18,4 +18,3 @@ libconfigcpp.o: libconfigcpp.c++
 
 clean:
 	@rm -f *.o *.a *.so
-
