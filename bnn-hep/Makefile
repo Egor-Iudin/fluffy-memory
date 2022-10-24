@@ -2,7 +2,7 @@
 CC = g++
 INCLUDE = -Iinclude -I../libconfig/ -I$(shell root-config --incdir)  
 OPFLAGS = 
-CFLAGS = -Wall -fopenmp -Wextra -std=c++11 $(INCLUDE) $(OPFLAGS)
+CFLAGS = -Wall -fopenmp -Wextra -std=c++17 $(INCLUDE) $(OPFLAGS)
 LDFLAGS = $(shell root-config --libs) -lTreePlayer -lboost_filesystem  -lboost_system -fopenmp 
 EXECUTABLE = bnn-hep
 SOURCES = $(shell ls src/ | grep .cpp)
@@ -30,6 +30,7 @@ $(EXECUTABLE): $(OBJECTS)
 # '$<' is expanded to the first dependency
 
 clean:
+	@rm -f bnn-hep
 	@rm -f *.o
 # '@' prevents the command from being printed to stdout
 

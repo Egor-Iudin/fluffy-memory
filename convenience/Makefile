@@ -2,7 +2,7 @@
 CC = g++
 INCLUDE = -Iinclude -I../bnn-hep/include/ -I$(shell root-config --incdir)
 OPFLAGS = 
-CFLAGS = -Wall -Wextra -std=c++11 $(INCLUDE) $(OPFLAGS)
+CFLAGS = -Wall -Wextra -std=c++17 $(INCLUDE) $(OPFLAGS)
 LDFLAGS = $(shell root-config --libs) -lboost_system  -lboost_filesystem
 
 vpath %.cpp src ../bnn-hep/src
@@ -26,4 +26,5 @@ eventIDToIndex: eventIDToIndex.o EventID.o TrainEventList.o
 
 clean:
 	@ rm -f *.o
+	@ rm -f ./eventIndexToID ./eventIDToIndex
 	@ rm -f ../bin/eventIndexToID ../bin/eventIDToIndex
